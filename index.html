@@ -1,0 +1,71 @@
+<input id="uploader" type="file" id="input" multiple>
+
+<canvas width=4096 height=4096>
+</canvas>
+
+<script>
+
+const canvas = document.querySelector("canvas")
+const context = canvas.getContext("2d")
+
+let queue = []
+let loadedCount = 0
+let x = 0
+let y = 0
+
+const uploader = document.querySelector("#uploader")
+uploader.addEventListener("change", e => {
+	const files = [...e.target.files]
+	const sortedFiles = sortFiles(files)
+	
+	for (const file of sortedFiles) {
+		const image = document.createElement("img")
+		queue.push([file.name, image])
+		
+		image.file = file
+		image.onload = e => {
+			loadedCount++
+			if (loadedCount >= queue.length) {
+				drawQueue()
+			}
+		}
+		
+		const reader = new FileReader()
+		reader.onload = e => {
+			image.src = e.target.result
+		}
+		reader.readAsDataURL(file)
+	}
+})
+
+const sortFiles = (files) => {
+	const fileInfos = files.map(file => {
+		const name = file.name.split(".").slice(0, -1).join("")
+		const number = parseInt(name.slice(-2))
+		return [number, file]
+	})
+	
+	const sortedFileInfos = fileInfos.sort(([a], [b]) => a - b)
+	const sortedFiles = sortedFileInfos.map(info => {
+		const [number, file] = info
+		return file
+	})
+	
+	return sortedFiles
+}
+
+const drawQueue = () => {
+	for (const [name, image] of queue) {
+		console.log(`Drawing '${name}' at`, {x, y})
+		context.drawImage(image, x, y)
+		x += image.naturalWidth
+		if (x > 4096 - image.naturalWidth) {
+			x = 0
+			y += image.naturalHeight
+		}
+	}
+	queue = []
+	loadedCount = 0
+}
+
+</script>
